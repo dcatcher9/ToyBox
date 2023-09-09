@@ -5,6 +5,15 @@ using TMPro;
 using ToyBox.classes.MainUI.Inventory;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Linq;
+using Kingmaker.Blueprints.Items.Weapons;
+using Kingmaker.Blueprints;
+using Kingmaker.Blueprints.Area;
+using Kingmaker.Blueprints.Items.Armors;
+using Kingmaker.Utility;
+using System.ComponentModel;
+using System.Threading;
+using Kingmaker.Blueprints.Items.Equipment;
 #if Wrath
 using Kingmaker.UI.MVVM._VM.ServiceWindows.Inventory;
 using Kingmaker.UI.ServiceWindow;
@@ -27,6 +36,12 @@ namespace ToyBox {
             }
 #if Wrath
             BagOfPatches.CameraPatches.CameraRigPatch.OnAreaLoad();
+
+            if (!Main.Settings.toggleRandomLootForContainer && !Main.Settings.toggleRandomLootForEnemy) {
+                var allLoots = LootHelper.GetMassLootFromCurrentArea();
+                LootHelper.RandomizeLoots(allLoots);
+            }
+            
 #endif
 #if false
             if (Settings.EnableInventorySearchBar)

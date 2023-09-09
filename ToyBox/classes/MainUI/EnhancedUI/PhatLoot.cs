@@ -54,6 +54,27 @@ namespace ToyBox {
             );
 #endif
             Div(0, 25);
+            HStack("Random Loot".localize(), 1,
+                () => {
+                    Toggle("Enable Random Loot Generation for Enemies".localize(), ref Settings.toggleRandomLootForEnemy, 400.width());
+                    150.space();
+                    Label("Loot generated when they spawn".localize().green());
+                },
+                () => {
+                    if(Settings.toggleRandomLootForEnemy) {
+                        using (VerticalScope(400.width())) {
+                            Label("Minimum Rarity For random loot from enemy".localize().cyan(), AutoWidth());
+                            RarityGrid(ref Settings.minLootRarityForEnemy, 4, AutoWidth());
+                        }
+                    }
+                },
+                () => {
+                    Toggle("Enable Random Loot Generation for Containers".localize(), ref Settings.toggleRandomLootForContainer, 400.width());
+                    150.space();
+                    Label("Loot generated when area loaded".localize().green());
+                }
+            );
+            Div(0, 25);
             HStack("Loot".localize(), 1,
                 () => {
                     BindableActionButton(MassLootBox, true, Width(400));
@@ -169,7 +190,8 @@ namespace ToyBox {
                     if (Main.IsInGame) {
                         try {
                             areaName = Game.Instance.CurrentlyLoadedArea.AreaDisplayName;
-                        } catch { }
+                        }
+                        catch { }
                         var areaPrivateName = Game.Instance.CurrentlyLoadedArea.name;
                         if (areaPrivateName != areaName) areaName += $"\n({areaPrivateName})".yellow();
                     }

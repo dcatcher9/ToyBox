@@ -22,6 +22,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
+using Kingmaker.Blueprints.Items.Armors;
+using Kingmaker.Blueprints.Items.Equipment;
+using Kingmaker.Blueprints.Items.Weapons;
 #if Wrath
 using Kingmaker.UI.MVVM._PCView.Loot;
 using Kingmaker.UI.MVVM._VM.Loot;
@@ -29,6 +32,46 @@ using Kingmaker.UI.MVVM._VM.Loot;
 
 namespace ToyBox {
     public static class LootHelper {
+        public static void RandomizeLoots(IReadOnlyList<LootWrapper> loots) {
+            if (loots?.Any() != true)
+                return;
+
+            var containers = loots.Where(p => p.InteractionLoot != null).ToList();
+            var unitLoots = loots.Where(p => p.InteractionLoot == null).ToList();
+
+            var weapons = BlueprintExtensions.GetBlueprints<BlueprintItemWeapon>();
+            var armors = BlueprintExtensions.GetBlueprints<BlueprintItemArmor>();
+            var belt = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentBelt>();
+            var rings = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentRing>();
+            var gloves = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentGloves>();
+            var feet = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentFeet>();
+            var head = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentHead>();
+            var neck = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentNeck>();
+            var shirt = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentShirt>();
+            var shoulders = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentShoulders>();
+            var usable = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentUsable>();
+
+
+            Mod.Log($" Weapon {weapons.Count()}, Armors {armors.Count()} ");
+
+            if (Main.Settings.toggleRandomLootForContainer) {
+                foreach (var container in containers) {
+                    container.InteractionLoot.Loot.Add(weapons.Random());
+                    container.InteractionLoot.Loot.Add(armors.Random());
+                    container.InteractionLoot.Loot.Add(belt.Random());
+                    container.InteractionLoot.Loot.Add(rings.Random());
+                    container.InteractionLoot.Loot.Add(gloves.Random());
+                    container.InteractionLoot.Loot.Add(feet.Random());
+                    container.InteractionLoot.Loot.Add(head.Random());
+                    container.InteractionLoot.Loot.Add(neck.Random());
+                    container.InteractionLoot.Loot.Add(shirt.Random());
+                    container.InteractionLoot.Loot.Add(shoulders.Random());
+                    container.InteractionLoot.Loot.Add(usable.Random());
+                    Mod.Log("Add for container:" + container.GetName());
+                }
+            }
+        }
+
         public static string NameAndOwner(this ItemEntity u, bool showRating, bool darkmode = false) =>
             (showRating ? $"{u.Rating()} ".orange().bold() : "")
 #if Wrath
@@ -79,7 +122,7 @@ namespace ToyBox {
             return null;
         }
 #if Wrath
-        public static IEnumerable<LootWrapper> GetMassLootFromCurrentArea() {
+        public static List<LootWrapper> GetMassLootFromCurrentArea() {
             List<LootWrapper> lootWrapperList = new();
             var units = Shodan.AllUnits
                 .Where<UnitEntityData>((Func<UnitEntityData, bool>)(u => u.IsInGame && !u.Descriptor.IsPartyOrPet()));
@@ -107,7 +150,7 @@ namespace ToyBox {
                 InteractionLoot = i
             }));
             lootWrapperList.AddRange(collection);
-            return (IEnumerable<LootWrapper>)lootWrapperList;
+            return lootWrapperList;
         }
 #elif RT
         // TODO: implement ToyBox improvements
@@ -199,14 +242,14 @@ namespace ToyBox {
                                          .StaticPartVM?.LootContextVM;
             if (contextVM == null) return;
             // Add new loot...
-            var objects = new EntityViewBase[] { }; 
-            var lootVM = new LootVM(LootContextVM.LootWindowMode.PlayerChest, objects , () => contextVM.DisposeAndRemove(contextVM.LootVM));
+            var objects = new EntityViewBase[] { };
+            var lootVM = new LootVM(LootContextVM.LootWindowMode.PlayerChest, objects, () => contextVM.DisposeAndRemove(contextVM.LootVM));
             var sharedStash = Game.Instance.Player.SharedStash;
 #if Wrath
-            var lootObjectVM = new LootObjectVM("Player Chest".localize(), 
+            var lootObjectVM = new LootObjectVM("Player Chest".localize(),
                                                 "",
-                                                sharedStash, 
-                                                LootContextVM.LootWindowMode.PlayerChest, 
+                                                sharedStash,
+                                                LootContextVM.LootWindowMode.PlayerChest,
                                                 1);
 #elif RT
             var lootObjectVM = new LootObjectVM(LootObjectType.Normal,

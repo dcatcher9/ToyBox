@@ -122,6 +122,13 @@ namespace ToyBox {
             }
             return blueprints;
         }
+
+        public void ForceLoadBlueprints() {
+
+            blueprints = ResourcesLibrary.BlueprintsCache.m_LoadedBlueprints.Select(kv => ResourcesLibrary.TryGetBlueprint(kv.Key)).ToList();
+
+            Mod.Log($"force load {blueprints.Count} blueprints");
+        }
         public List<BPType> GetBlueprints<BPType>() {
             var bps = GetBlueprints();
             return bps?.OfType<BPType>().ToList() ?? null;

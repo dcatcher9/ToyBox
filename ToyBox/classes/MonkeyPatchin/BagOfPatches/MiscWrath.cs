@@ -1,5 +1,6 @@
 // borrowed shamelessly and enhanced from Bag of Tricks https://www.nexusmods.com/pathfinderkingmaker/mods/26, which is under the MIT License
 
+using Epic.OnlineServices;
 using HarmonyLib;
 using JetBrains.Annotations;
 using Kingmaker;
@@ -8,6 +9,7 @@ using Kingmaker.Blueprints;
 using Kingmaker.Blueprints.Items.Components;
 using Kingmaker.Blueprints.Items.Equipment;
 using Kingmaker.Blueprints.Items.Weapons;
+using Kingmaker.Blueprints.JsonSystem;
 using Kingmaker.Blueprints.Root;
 using Kingmaker.Controllers;
 //using Kingmaker.Controllers.GlobalMap;
@@ -41,6 +43,7 @@ using Owlcat.Runtime.UniRx;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using ToyBox.Multiclass;
 //using Kingmaker.UI._ConsoleUI.GroupChanger;
 using UnityEngine;
@@ -50,6 +53,13 @@ namespace ToyBox.BagOfPatches {
     internal static partial class Misc {
         public static Settings settings = Main.Settings;
         public static Player player = Game.Instance.Player;
+
+        [HarmonyPatch(typeof(BlueprintsCache), nameof(BlueprintsCache.Init))]
+        internal static class BlueprintsCache_Init_Patch {
+            private static void Postfix() {
+                BlueprintLoader.Shared.ForceLoadBlueprints();
+            }
+        }
 
         [HarmonyPatch(typeof(Player), nameof(Player.OnAreaLoaded))]
         internal static class Player_OnAreaLoaded_Patch {
