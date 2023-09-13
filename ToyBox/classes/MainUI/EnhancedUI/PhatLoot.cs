@@ -66,17 +66,17 @@ namespace ToyBox {
                     Label("Loot generated when they spawn".localize().green());
                 },
                 () => {
-                    if(Settings.toggleRandomLootForEnemy) {
-                        using (VerticalScope(400.width())) {
-                            Label("Minimum Rarity For random loot from enemy".localize().cyan(), AutoWidth());
-                            RarityGrid(ref Settings.minLootRarityForEnemy, 4, AutoWidth());
-                        }
-                    }
-                },
-                () => {
                     Toggle("Enable Random Loot Generation for Containers".localize(), ref Settings.toggleRandomLootForContainer, 400.width());
                     150.space();
                     Label("Loot generated when area loaded".localize().green());
+                },
+                () => {
+                    if (Settings.toggleRandomLootForEnemy || Settings.toggleRandomLootForContainer) {
+                        using (VerticalScope(400.width())) {
+                            Label("Minimum Rarity For random loot from enemy".localize().cyan(), AutoWidth());
+                            RarityGrid(ref Settings.minLootRarity, 4, AutoWidth());
+                        }
+                    }
                 }
             );
             Div(0, 25);

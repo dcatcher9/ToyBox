@@ -32,6 +32,8 @@ using Kingmaker.Blueprints.Items.Shields;
 using ToyBox.Inventory;
 using static RootMotion.FinalIK.GrounderQuadruped;
 using Kingmaker.Blueprints;
+using Kingmaker.Blueprints.Items.Ecnchantments;
+using Kingmaker.UnitLogic.Mechanics;
 #if Wrath
 using Kingmaker.UI.MVVM._PCView.Loot;
 using Kingmaker.UI.MVVM._VM.Loot;
@@ -41,6 +43,8 @@ namespace ToyBox {
     public static class LootHelper {
 
         private static Dictionary<Type, Dictionary<RarityType, List<BlueprintItem>>> _cachedLoots = new();
+
+        private static Dictionary<RarityType, List<BlueprintItemEnchantment>> _cachedEnchantment = new();
 
         public static void BuildCachedLoots() {
             _cachedLoots.Clear();
@@ -65,50 +69,101 @@ namespace ToyBox {
             _cachedLoots[typeof(BlueprintItem)] = BlueprintExtensions.GetBlueprints<BlueprintItem>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList());
             _cachedLoots[typeof(BlueprintIngredient)] = BlueprintExtensions.GetBlueprints<BlueprintIngredient>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
 
+            _cachedEnchantment = BlueprintExtensions.GetBlueprints<BlueprintItemEnchantment>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList());
+
             foreach (var kv in _cachedLoots) {
                 foreach (var kv2 in kv.Value) {
                     Mod.Log($"{kv.Key} = [{kv2.Key}]{kv2.Value.Count}");
                 }
             }
 
+            foreach (var kv in _cachedEnchantment) {
+                Mod.Log($"Enchantment = [{kv.Key}]{kv.Value.Count}");
+            }
+
             UnityEngine.Random.InitState(System.DateTime.UtcNow.Ticks.GetHashCode());
         }
 
+        public static void AddRandomEnchantment(this ItemEntity item) {
+            var rarity = item.Rarity();
+
+            if (rarity == RarityType.Notable)
+                rarity = RarityType.Uncommon;
+
+            Mod.Log($"[Enchant] Item {item} Rarity = {rarity}");
+
+            var fake_context = new MechanicsContext(default); // if context is null, items may stack which could cause bugs
+
+            for (var i = 0; i < 3; i++) {
+                if (_cachedEnchantment.TryGetValue(rarity, out var list) && list?.Any() == true) {
+                    var enchantment = list.Random();
+                    if ((item is ItemEntityWeapon && enchantment is BlueprintArmorEnchantment)
+                        || (item is ItemEntityArmor && enchantment is BlueprintWeaponEnchantment)
+                        || (item is ItemEntitySimple && (enchantment is BlueprintWeaponEnchantment || enchantment is BlueprintArmorEnchantment))
+                        || (item is ItemEntityUsable)
+                        )
+                        continue;
+
+                    Mod.Log($"Add Enchantment {enchantment} to item {item}");
+
+                    var itemEntityShield = item as ItemEntityShield;
+                    switch (enchantment) {
+                        case BlueprintWeaponEnchantment _ when itemEntityShield != null:
+                            var weaponComponent = itemEntityShield.WeaponComponent;
+                            if (weaponComponent == null)
+                                break;
+                            weaponComponent.AddEnchantment(enchantment, fake_context);
+                            break;
+                        case BlueprintArmorEnchantment _ when itemEntityShield != null:
+                            itemEntityShield.ArmorComponent.AddEnchantment(enchantment, fake_context);
+                            break;
+                        default:
+                            item.AddEnchantment(enchantment, fake_context);
+                            break;
+                    }
+
+                    return;
+                }
+            }
+        }
+
         public static BlueprintItem GenerateRandomLoot() {
-            if (_cachedLoots.TryGetValue(typeof(BlueprintItem), out var bps) && bps?.Any() == true) {
-                return bps[RarityType.Trash].Random();
+            var bps = BlueprintExtensions.GetBlueprints<BlueprintItem>();
+            if (bps?.Any() == true) {
+                var bp = bps.Random();
+                var rarity = bp.Rarity();
+                if ( rarity >= Main.Settings.minLootRarity && rarity != RarityType.Notable )
+                    return bp;
             }
 
             return null;
         }
 
-        public static BlueprintItem MoreLikeThis(this BlueprintItem item, bool upgrade = false) {
-            Type type = item.GetType();
+        public static BlueprintItem MoreLikeThis(this ItemEntity item, bool upgrade = false) {
+            if (item.Blueprint == null)
+                return null;
+
+            Type type = item.Blueprint.GetType();
 
             Mod.Log($"type = {type}, {_cachedLoots.ContainsKey(type)}");
 
             if (!_cachedLoots.TryGetValue(type, out var bps) || bps == null)
                 return null;
 
-            Mod.Log($"cached {bps.Count}");
-
             RarityType rarity = item.Rarity();
 
-            if (rarity == RarityType.Notable)
-                rarity--;
-
             if (upgrade) {
+                Mod.Log($"Upgrade from {rarity} to {rarity + 1}");
                 rarity++;
-                if (rarity == RarityType.Notable)
-                    rarity--;
             }
 
-            while (rarity > RarityType.None) {
+            if (rarity >= RarityType.Notable)
+                rarity = RarityType.Notable - 1;
+
+            while (rarity >= Main.Settings.minLootRarity) {
                 Mod.Log($"Rarity = {rarity}");
 
                 if (bps.TryGetValue(rarity, out var list) && list?.Any() == true) {
-                    Mod.Log($"List {list.Count}");
-
                     return list.Random();
                 }
 
@@ -132,7 +187,7 @@ namespace ToyBox {
                     return;
 
                 // remove existing item with unique name starting with [Rnd]
-                foreach( var bp in existingRandomItems) {
+                foreach (var bp in existingRandomItems) {
                     collection.Remove(bp);
                 }
             }
@@ -140,7 +195,7 @@ namespace ToyBox {
             List<BlueprintItem> newLoots = new();
 
             foreach (var lootItem in collection) {
-                var newLoot = lootItem.Blueprint?.MoreLikeThis(fUpgrade);
+                var newLoot = lootItem.MoreLikeThis(upgrade: UnityEngine.Random.Range(0, 100) > 80);
 
                 Mod.Log($"Bp = {newLoot?.Name} : {newLoot?.AssetGuid} from {lootItem.Blueprint}");
 
@@ -148,9 +203,21 @@ namespace ToyBox {
                     newLoots.Add(newLoot);
             }
 
+            if (!newLoots.Any()) {
+                var count = UnityEngine.Random.Range(1, 4); // 1,2,3
+                while (count-- > 0) {
+                    var pureRandomLoot = GenerateRandomLoot();
+                    if (pureRandomLoot != null)
+                        newLoots.Add(pureRandomLoot);
+                }
+            }
+
             foreach (var bpItem in newLoots) {
                 var entity = bpItem.CreateEntity();
                 entity.UniqueId = c_prefix + entity.UniqueId;
+
+                entity.AddRandomEnchantment();
+
                 collection.Add(entity);
             }
         }
