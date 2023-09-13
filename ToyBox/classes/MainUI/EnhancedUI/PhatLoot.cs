@@ -56,6 +56,11 @@ namespace ToyBox {
             Div(0, 25);
             HStack("Random Loot".localize(), 1,
                 () => {
+                    Toggle("Enable resetting the existing random loot".localize(), ref Settings.toggleResetRandomLootEveryLoading, 400.width());
+                    150.space();
+                    Label("Whenever the area is loaded again".localize().green());
+                },
+                () => {
                     Toggle("Enable Random Loot Generation for Enemies".localize(), ref Settings.toggleRandomLootForEnemy, 400.width());
                     150.space();
                     Label("Loot generated when they spawn".localize().green());

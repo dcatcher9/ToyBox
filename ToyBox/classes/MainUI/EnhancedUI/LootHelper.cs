@@ -25,6 +25,13 @@ using UnityEngine;
 using Kingmaker.Blueprints.Items.Armors;
 using Kingmaker.Blueprints.Items.Equipment;
 using Kingmaker.Blueprints.Items.Weapons;
+using Kingmaker.Blueprints.Items;
+using System.ComponentModel;
+using Kingmaker.Craft;
+using Kingmaker.Blueprints.Items.Shields;
+using ToyBox.Inventory;
+using static RootMotion.FinalIK.GrounderQuadruped;
+using Kingmaker.Blueprints;
 #if Wrath
 using Kingmaker.UI.MVVM._PCView.Loot;
 using Kingmaker.UI.MVVM._VM.Loot;
@@ -32,43 +39,119 @@ using Kingmaker.UI.MVVM._VM.Loot;
 
 namespace ToyBox {
     public static class LootHelper {
-        public static void RandomizeLoots(IReadOnlyList<LootWrapper> loots) {
-            if (loots?.Any() != true)
+
+        private static Dictionary<Type, Dictionary<RarityType, List<BlueprintItem>>> _cachedLoots = new();
+
+        public static void BuildCachedLoots() {
+            _cachedLoots.Clear();
+
+            _cachedLoots[typeof(BlueprintItemWeapon)] = BlueprintExtensions.GetBlueprints<BlueprintItemWeapon>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItemArmor)] = BlueprintExtensions.GetBlueprints<BlueprintItemArmor>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItemShield)] = BlueprintExtensions.GetBlueprints<BlueprintItemShield>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItemEquipmentBelt)] = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentBelt>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItemEquipmentRing)] = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentRing>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItemEquipmentGloves)] = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentGloves>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItemEquipmentFeet)] = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentFeet>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItemEquipmentHead)] = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentHead>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItemEquipmentNeck)] = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentNeck>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItemEquipmentShirt)] = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentShirt>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItemEquipmentShoulders)] = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentShoulders>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItemEquipmentUsable)] = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentUsable>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItemEquipmentGlasses)] = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentGlasses>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItemEquipmentHand)] = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentHand>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItemEquipmentHandSimple)] = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentHandSimple>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItemEquipmentSimple)] = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentSimple>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItemEquipmentWrist)] = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentWrist>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+            _cachedLoots[typeof(BlueprintItem)] = BlueprintExtensions.GetBlueprints<BlueprintItem>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList());
+            _cachedLoots[typeof(BlueprintIngredient)] = BlueprintExtensions.GetBlueprints<BlueprintIngredient>().GroupBy(item => item.Rarity()).ToDictionary(group => group.Key, group => group.ToList<BlueprintItem>());
+
+            foreach (var kv in _cachedLoots) {
+                foreach (var kv2 in kv.Value) {
+                    Mod.Log($"{kv.Key} = [{kv2.Key}]{kv2.Value.Count}");
+                }
+            }
+
+            UnityEngine.Random.InitState(System.DateTime.UtcNow.Ticks.GetHashCode());
+        }
+
+        public static BlueprintItem GenerateRandomLoot() {
+            if (_cachedLoots.TryGetValue(typeof(BlueprintItem), out var bps) && bps?.Any() == true) {
+                return bps[RarityType.Trash].Random();
+            }
+
+            return null;
+        }
+
+        public static BlueprintItem MoreLikeThis(this BlueprintItem item, bool upgrade = false) {
+            Type type = item.GetType();
+
+            Mod.Log($"type = {type}, {_cachedLoots.ContainsKey(type)}");
+
+            if (!_cachedLoots.TryGetValue(type, out var bps) || bps == null)
+                return null;
+
+            Mod.Log($"cached {bps.Count}");
+
+            RarityType rarity = item.Rarity();
+
+            if (rarity == RarityType.Notable)
+                rarity--;
+
+            if (upgrade) {
+                rarity++;
+                if (rarity == RarityType.Notable)
+                    rarity--;
+            }
+
+            while (rarity > RarityType.None) {
+                Mod.Log($"Rarity = {rarity}");
+
+                if (bps.TryGetValue(rarity, out var list) && list?.Any() == true) {
+                    Mod.Log($"List {list.Count}");
+
+                    return list.Random();
+                }
+
+                rarity--;
+            }
+
+            return null;
+        }
+
+        public static void GenerateRandomLoot(this LootWrapper loot, bool fUpgrade = false) {
+            const string c_prefix = "[Rnd]";
+
+            ItemsCollection collection = loot.GetInteraction();
+            if (collection == null)
                 return;
 
-            var containers = loots.Where(p => p.InteractionLoot != null).ToList();
-            var unitLoots = loots.Where(p => p.InteractionLoot == null).ToList();
+            var existingRandomItems = collection.Where(item => item.UniqueId.StartsWith(c_prefix) && item.Blueprint != null).Select(item => item.Blueprint).ToList();
 
-            var weapons = BlueprintExtensions.GetBlueprints<BlueprintItemWeapon>();
-            var armors = BlueprintExtensions.GetBlueprints<BlueprintItemArmor>();
-            var belt = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentBelt>();
-            var rings = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentRing>();
-            var gloves = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentGloves>();
-            var feet = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentFeet>();
-            var head = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentHead>();
-            var neck = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentNeck>();
-            var shirt = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentShirt>();
-            var shoulders = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentShoulders>();
-            var usable = BlueprintExtensions.GetBlueprints<BlueprintItemEquipmentUsable>();
+            if (existingRandomItems.Any()) {
+                if (!Main.Settings.toggleResetRandomLootEveryLoading)
+                    return;
 
-
-            Mod.Log($" Weapon {weapons.Count()}, Armors {armors.Count()} ");
-
-            if (Main.Settings.toggleRandomLootForContainer) {
-                foreach (var container in containers) {
-                    container.InteractionLoot.Loot.Add(weapons.Random());
-                    container.InteractionLoot.Loot.Add(armors.Random());
-                    container.InteractionLoot.Loot.Add(belt.Random());
-                    container.InteractionLoot.Loot.Add(rings.Random());
-                    container.InteractionLoot.Loot.Add(gloves.Random());
-                    container.InteractionLoot.Loot.Add(feet.Random());
-                    container.InteractionLoot.Loot.Add(head.Random());
-                    container.InteractionLoot.Loot.Add(neck.Random());
-                    container.InteractionLoot.Loot.Add(shirt.Random());
-                    container.InteractionLoot.Loot.Add(shoulders.Random());
-                    container.InteractionLoot.Loot.Add(usable.Random());
-                    Mod.Log("Add for container:" + container.GetName());
+                // remove existing item with unique name starting with [Rnd]
+                foreach( var bp in existingRandomItems) {
+                    collection.Remove(bp);
                 }
+            }
+
+            List<BlueprintItem> newLoots = new();
+
+            foreach (var lootItem in collection) {
+                var newLoot = lootItem.Blueprint?.MoreLikeThis(fUpgrade);
+
+                Mod.Log($"Bp = {newLoot?.Name} : {newLoot?.AssetGuid} from {lootItem.Blueprint}");
+
+                if (newLoot != null)
+                    newLoots.Add(newLoot);
+            }
+
+            foreach (var bpItem in newLoots) {
+                var entity = bpItem.CreateEntity();
+                entity.UniqueId = c_prefix + entity.UniqueId;
+                collection.Add(entity);
             }
         }
 
@@ -102,17 +185,11 @@ namespace ToyBox {
             return null;
         }
 
-        public static List<ItemEntity> GetInteraction(this LootWrapper present) {
-            if (present.InteractionLoot != null) return present.InteractionLoot.Loot.Items
-#if RT
-                                                               .ToList()
-#endif
-                                                               ;
-            if (present.Unit != null) return present.Unit.Inventory.Items
-#if RT
-                                                    .ToList()
-#endif                                                    
-                                                    ;
+        public static ItemsCollection GetInteraction(this LootWrapper present) {
+            if (present.InteractionLoot != null) return present.InteractionLoot.Loot;
+
+            if (present.Unit != null) return present.Unit.Inventory;
+
             return null;
         }
         public static IEnumerable<ItemEntity> Search(this IEnumerable<ItemEntity> items, string searchText) => items.Where(i => searchText.Length > 0 ? i.Name.ToLower().Contains(searchText.ToLower()) : true);

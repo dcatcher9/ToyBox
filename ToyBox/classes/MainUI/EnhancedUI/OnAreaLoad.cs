@@ -20,6 +20,21 @@ using Kingmaker.UI.ServiceWindow;
 #endif
 
 namespace ToyBox {
+    public class OnAreaLoadComplete : IAreaLoadingStagesHandler {
+        public Settings Settings => Main.Settings;
+        public void OnAreaLoadingComplete() {
+
+            foreach( var lootWrapper in LootHelper.GetMassLootFromCurrentArea() ) {
+                if ( ( lootWrapper.InteractionLoot != null && Settings.toggleRandomLootForContainer) || (lootWrapper.Unit != null && Settings.toggleRandomLootForEnemy)) {
+                    lootWrapper.GenerateRandomLoot();
+                }
+            }
+        }
+        public void OnAreaScenesLoaded() {
+
+        }
+    }
+
     public class OnAreaLoad : IAreaHandler {
         public Settings Settings => Main.Settings;
         public void SelectedCharacterDidChange() {
@@ -36,12 +51,6 @@ namespace ToyBox {
             }
 #if Wrath
             BagOfPatches.CameraPatches.CameraRigPatch.OnAreaLoad();
-
-            if (!Main.Settings.toggleRandomLootForContainer && !Main.Settings.toggleRandomLootForEnemy) {
-                var allLoots = LootHelper.GetMassLootFromCurrentArea();
-                LootHelper.RandomizeLoots(allLoots);
-            }
-            
 #endif
 #if false
             if (Settings.EnableInventorySearchBar)

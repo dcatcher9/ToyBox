@@ -23,6 +23,7 @@ namespace ToyBox {
         private static Harmony m_harmony;
 #if Wrath
         private static OnAreaLoad m_area_load_handler;
+        private static OnAreaLoadComplete m_area_load_complete_handler;
 #endif
 
         public static readonly Dictionary<ItemSortCategories, (int index, string title)> SorterCategoryMap = new Dictionary<ItemSortCategories, (int index, string title)> {
@@ -75,6 +76,8 @@ namespace ToyBox {
 #if Wrath
             m_area_load_handler = new OnAreaLoad();
             EventBus.Subscribe(m_area_load_handler);
+            m_area_load_complete_handler = new OnAreaLoadComplete();
+            EventBus.Subscribe(m_area_load_complete_handler);
 #endif
             RefreshRemappers();
         }

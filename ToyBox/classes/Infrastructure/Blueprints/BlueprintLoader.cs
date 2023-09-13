@@ -16,7 +16,6 @@ namespace ToyBox {
         private LoadBlueprintsCallback callback;
         private List<SimpleBlueprint> _blueprintsInProcess;
         private List<SimpleBlueprint> blueprints;
-        //private List<SimpleBlueprint> blueprints;
         public float progress = 0;
         private static BlueprintLoader _shared;
         public static BlueprintLoader Shared {
@@ -116,6 +115,8 @@ namespace ToyBox {
                         _blueprintsInProcess = bps.ToList();
                         blueprints = _blueprintsInProcess;
                         Mod.Debug($"success got {bps.Count()} bluerints");
+
+                        LootHelper.BuildCachedLoots();
                     });
                     return null;
                 }
@@ -125,9 +126,13 @@ namespace ToyBox {
 
         public void ForceLoadBlueprints() {
 
-            blueprints = ResourcesLibrary.BlueprintsCache.m_LoadedBlueprints.Select(kv => ResourcesLibrary.TryGetBlueprint(kv.Key)).ToList();
+            var guids = ResourcesLibrary.BlueprintsCache.m_LoadedBlueprints.Keys.ToList(); // the m_LoadedBlueprints changes during this functions??? Need to first get a copy of guids to avoid exception
+
+            blueprints = guids.Select(guid => ResourcesLibrary.TryGetBlueprint(guid)).Where(bp => bp != null).ToList();
 
             Mod.Log($"force load {blueprints.Count} blueprints");
+
+            LootHelper.BuildCachedLoots();
         }
         public List<BPType> GetBlueprints<BPType>() {
             var bps = GetBlueprints();

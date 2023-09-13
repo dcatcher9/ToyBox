@@ -58,6 +58,7 @@ namespace ToyBox.BagOfPatches {
         internal static class BlueprintsCache_Init_Patch {
             private static void Postfix() {
                 BlueprintLoader.Shared.ForceLoadBlueprints();
+                SpawnHelper.RandomSpawnLogic.Init();
             }
         }
 

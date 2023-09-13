@@ -305,9 +305,9 @@ namespace ToyBox {
         public static string GetInfoBoxDescription(this SimpleBlueprint bp) => string.Join("\n", bp.GetInfoBoxes().Select(attr => attr.Text));
 #endif
 
-        private static readonly Dictionary<Type, IEnumerable<SimpleBlueprint>> blueprintsByType = new();
+        //private static readonly Dictionary<Type, IEnumerable<SimpleBlueprint>> blueprintsByType = new();
         public static IEnumerable<SimpleBlueprint> BlueprintsOfType(Type type) {
-            if (blueprintsByType.TryGetValue(type, out var ofType)) return ofType;
+            //if (blueprintsByType.TryGetValue(type, out var ofType)) return ofType;
             var blueprints = BlueprintLoader.Shared.GetBlueprints();
             if (blueprints == null) return new List<SimpleBlueprint>();
             var filtered = blueprints.Where((bp) => bp?.GetType().IsKindOf(type) == true).ToList();
@@ -317,9 +317,9 @@ namespace ToyBox {
             return filtered;
         }
 
-        public static IEnumerable<BPType> BlueprintsOfType<BPType>() where BPType : SimpleBlueprint {
+        public static IList<BPType> BlueprintsOfType<BPType>() where BPType : SimpleBlueprint {
             var type = typeof(BPType);
-            if (blueprintsByType.TryGetValue(type, out var value)) return value.OfType<BPType>();
+            //if (blueprintsByType.TryGetValue(type, out var value)) return value.OfType<BPType>();
             var blueprints = BlueprintLoader.Shared.GetBlueprints<BPType>();
             if (blueprints == null) return new List<BPType>();
             var filtered = blueprints.Where((bp) => bp != null).ToList();
@@ -329,7 +329,7 @@ namespace ToyBox {
             return filtered;
         }
 
-        public static IEnumerable<T> GetBlueprints<T>() where T : SimpleBlueprint => BlueprintsOfType<T>();
+        public static IList<T> GetBlueprints<T>() where T : SimpleBlueprint => BlueprintsOfType<T>();
 #if Wrath        
         public static int GetSelectableFeaturesCount(this BlueprintFeatureSelection selection, UnitDescriptor unit) {
             var count = 0;
