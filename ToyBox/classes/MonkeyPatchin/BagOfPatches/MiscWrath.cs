@@ -7,15 +7,19 @@ using Kingmaker;
 using Kingmaker.Achievements;
 using Kingmaker.Blueprints;
 using Kingmaker.Blueprints.Items.Components;
+using Kingmaker.Blueprints.Items.Ecnchantments;
 using Kingmaker.Blueprints.Items.Equipment;
 using Kingmaker.Blueprints.Items.Weapons;
 using Kingmaker.Blueprints.JsonSystem;
 using Kingmaker.Blueprints.Root;
 using Kingmaker.Controllers;
+using Kingmaker.Designers;
+using Kingmaker.Designers.Mechanics.EquipmentEnchants;
 //using Kingmaker.Controllers.GlobalMap;
 using Kingmaker.EntitySystem;
 using Kingmaker.EntitySystem.Entities;
 using Kingmaker.EntitySystem.Persistence;
+using Kingmaker.Enums;
 using Kingmaker.Enums.Damage;
 using Kingmaker.GameModes;
 using Kingmaker.Items;
@@ -31,11 +35,14 @@ using Kingmaker.UI.MVVM._PCView.Slots;
 using Kingmaker.UI.MVVM._PCView.Vendor;
 using Kingmaker.UI.MVVM._VM.Common;
 using Kingmaker.UI.MVVM._VM.CounterWindow;
+using Kingmaker.UI.MVVM._VM.Tooltip.Templates;
+using Kingmaker.UI.Tooltip;
 using Kingmaker.UI.TurnBasedMode;
 //using Kingmaker.UI.RestCamp;
 using Kingmaker.UnitLogic.Abilities.Blueprints;
 using Kingmaker.UnitLogic.Buffs;
 using Kingmaker.UnitLogic.Class.Kineticist;
+using Kingmaker.UnitLogic.FactLogic;
 using Kingmaker.Utility;
 using Kingmaker.View;
 using ModKit;
@@ -47,12 +54,55 @@ using System.Threading;
 using ToyBox.Multiclass;
 //using Kingmaker.UI._ConsoleUI.GroupChanger;
 using UnityEngine;
+using static RootMotion.FinalIK.RagdollUtility;
 using Utilities = Kingmaker.Cheats.Utilities;
 
 namespace ToyBox.BagOfPatches {
     internal static partial class Misc {
         public static Settings settings = Main.Settings;
         public static Player player = Game.Instance.Player;
+
+        [HarmonyPatch(typeof(UIUtilityItem), nameof(UIUtilityItem.FillEnchantmentDescription), new Type[] { typeof(ItemEntity), typeof(TooltipData) })]
+        internal static class UIUtilityItem_FillEnchantmentDescription_Patch1 {
+            private static void Postfix(ItemEntity item, TooltipData data, ref string __result) {
+
+                //Mod.Log($"Tooltip {item.NameAndOwner()} _ {data.Type} _ result{__result}");
+
+                ItemEntitySimple itemEntitySimple = item as ItemEntitySimple;
+                if (itemEntitySimple != null && itemEntitySimple.IsIdentified) {
+                    data.Texts[TooltipElement.Qualities] = UIUtilityItem.GetQualities(itemEntitySimple);
+                    foreach (ItemEnchantment visibleEnchantment in itemEntitySimple.VisibleEnchantments) {
+                        if (!string.IsNullOrEmpty(visibleEnchantment.Blueprint.Description)) {
+                            __result += $"<b><align=\"center\">{visibleEnchantment.Blueprint.Name}</align></b>\n";
+                            __result = __result + visibleEnchantment.Blueprint.Description + "\n\n";
+                        }
+                    }
+
+                    //Mod.Log($"{__result}");
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(UIUtilityItem), nameof(UIUtilityItem.FillEnchantmentDescription), new Type[] { typeof(ItemEntity), typeof(ItemTooltipData) })]
+        internal static class UIUtilityItem_FillEnchantmentDescription_Patch2 {
+            private static void Postfix(ItemEntity item, ItemTooltipData itemTooltipData, ref string __result) {
+
+                //Mod.Log($"ItemTooltip {item.NameAndOwner()} _ {itemTooltipData.Item} _ result{__result}");
+
+                ItemEntitySimple itemEntitySimple = item as ItemEntitySimple;
+                if (itemEntitySimple != null && itemEntitySimple.IsIdentified) {
+                    itemTooltipData.Texts[TooltipElement.Qualities] = UIUtilityItem.GetQualities(itemEntitySimple);
+                    foreach (ItemEnchantment visibleEnchantment in itemEntitySimple.VisibleEnchantments) {
+                        if (!string.IsNullOrEmpty(visibleEnchantment.Blueprint.Description)) {
+                            __result += $"<b><align=\"center\">{visibleEnchantment.Blueprint.Name}</align></b>\n";
+                            __result = __result + visibleEnchantment.Blueprint.Description + "\n\n";
+                        }
+                    }
+
+                    //Mod.Log($"{__result}");
+                }
+            }
+        }
 
         [HarmonyPatch(typeof(BlueprintsCache), nameof(BlueprintsCache.Init))]
         internal static class BlueprintsCache_Init_Patch {

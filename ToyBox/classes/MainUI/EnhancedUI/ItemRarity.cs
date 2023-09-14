@@ -17,6 +17,8 @@ using System;
 using System.Linq;
 using ToyBox;
 using UnityEngine;
+using Kingmaker.Utility;
+using Kingmaker.Blueprints.Classes.Experience;
 #if Wrath
 using Kingmaker.UI.MVVM._PCView.ServiceWindows.LocalMap.Markers;
 using Kingmaker.UI.MVVM._VM.ServiceWindows.LocalMap.Markers;
@@ -181,6 +183,25 @@ namespace ToyBox {
 #endif
         }
         public static RarityType Rarity(this BlueprintItemEnchantment bp) => bp.Rating().Rarity();
+
+        public static RarityType Rarity( this LootWrapper loot) {
+            if( loot.Unit != null) {
+                Experience exp = BlueprintExtenstions.GetComponent<Experience>(loot.Unit.Blueprint);
+                if (exp == null)
+                    return RarityType.Trash;
+
+                double rating = exp.CR * 5;
+                if (exp.Encounter == EncounterType.Boss || exp.Encounter == EncounterType.ChallengeMajor)
+                    rating *= 2;
+
+                Mod.Log($"Rating {rating} CR {exp.CR} Name {loot.Unit.CharacterName} : {exp.Encounter}");
+
+                return ((int)rating).Rarity();
+            }
+
+            return RarityType.Trash;
+        }
+
         public static Color Color(this RarityType rarity, float adjust = 0) => RarityColors[(int)rarity].color(adjust);
         public static string? Rarity(this string s, RarityType rarity, float adjust = 0) => s.color(RarityColors[(int)rarity]);
         public static string? DarkModeRarity(this string s, RarityType rarity, float adjust = 0) => s.color(DarkModeRarityColors[(int)rarity]);

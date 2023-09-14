@@ -36,8 +36,19 @@ namespace ToyBox {
             progress = (float)loaded / (float)total;
         }
 
-        internal readonly HashSet<string> badBlueprints = new() { "ce0842546b73aa34b8fcf40a970ede68", "2e3280bf21ec832418f51bee5136ec7a",
-            "b60252a8ae028ba498340199f48ead67", "fb379e61500421143b52c739823b4082", "5d2b9742ce82457a9ae7209dce770071" };
+        internal readonly HashSet<string> badBlueprints = new() {
+            "ce0842546b73aa34b8fcf40a970ede68",
+            "2e3280bf21ec832418f51bee5136ec7a",
+            "b60252a8ae028ba498340199f48ead67",
+            "fb379e61500421143b52c739823b4082",
+            "5d2b9742ce82457a9ae7209dce770071",
+            "d92348a92ffbc3c42967851203f6e4e3",
+            "e03b3cfcb01670c47b102855982c23c6",
+            "855d0f8556ac4e78b07c5290a4ae83a2",
+            "d9d93775719044ca95cda068c654d416",
+            "eb4db5961ce551b45bbe21e270aa7d78",
+            "a873336aecf2b424a93bd52c3cfadf72",
+        };
 
         private IEnumerator LoadBlueprints() {
             yield return null;
@@ -128,7 +139,7 @@ namespace ToyBox {
 
             var guids = ResourcesLibrary.BlueprintsCache.m_LoadedBlueprints.Keys.ToList(); // the m_LoadedBlueprints changes during this functions??? Need to first get a copy of guids to avoid exception
 
-            blueprints = guids.Select(guid => ResourcesLibrary.TryGetBlueprint(guid)).Where(bp => bp != null).ToList();
+            blueprints = guids.Where(guid => !badBlueprints.Contains(guid.ToString())).Select(guid => ResourcesLibrary.TryGetBlueprint(guid)).Where(bp => bp != null).ToList();
 
             Mod.Log($"force load {blueprints.Count} blueprints");
 
