@@ -80,6 +80,14 @@ namespace ToyBox {
                 }
             );
             Div(0, 25);
+            HStack("Random Enemy".localize(), 1,
+                () => {
+                    Toggle("Enable more random enemies".localize(), ref Settings.toogleMoreRandomEnemies, 400.width());
+                    150.space();
+                    Label("More Challenges".localize().green());
+                }
+            );
+            Div(0, 25);
             HStack("Loot".localize(), 1,
                 () => {
                     BindableActionButton(MassLootBox, true, Width(400));

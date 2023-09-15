@@ -14,6 +14,8 @@ using Kingmaker.Utility;
 using System.ComponentModel;
 using System.Threading;
 using Kingmaker.Blueprints.Items.Equipment;
+using Kingmaker.AreaLogic.SummonPool;
+using Kingmaker.EntitySystem.Entities;
 #if Wrath
 using Kingmaker.UI.MVVM._VM.ServiceWindows.Inventory;
 using Kingmaker.UI.ServiceWindow;
@@ -24,9 +26,24 @@ namespace ToyBox {
         public Settings Settings => Main.Settings;
         public void OnAreaLoadingComplete() {
 
-            foreach( var lootWrapper in LootHelper.GetMassLootFromCurrentArea() ) {
-                if ( ( lootWrapper.InteractionLoot != null && Settings.toggleRandomLootForContainer) || (lootWrapper.Unit != null && Settings.toggleRandomLootForEnemy)) {
+            ISummonPool pool = Game.Instance.SummonPools.GetPool(SpawnHelper.RandomUnitsPool);
+            if (pool != null) {
+                foreach (UnitEntityData unitEntityData in pool.Units) {
+                    Mod.Log("Destroying a pre-existing random unit on the random pool. " + unitEntityData.CharacterName);
+                    unitEntityData.IsInGame = false;
+                    unitEntityData.MarkForDestroy();
+                }
+
+                Mod.Log($"Pool size after loading = {pool.Count}");
+            }
+
+            foreach (var lootWrapper in LootHelper.GetMassLootFromCurrentArea().Where(l => l.InteractionLoot != null || l.Unit?.Faction.AssetGuid == SpawnHelper.Mobs.AssetGuid)) {
+                if ((lootWrapper.InteractionLoot != null && Settings.toggleRandomLootForContainer) || (lootWrapper.Unit != null && Settings.toggleRandomLootForEnemy)) {
                     lootWrapper.GenerateRandomLoot();
+                }
+
+                if (Settings.toogleMoreRandomEnemies && lootWrapper.Unit != null) {
+                    SpawnHelper.SpawnUnit(lootWrapper.Unit)?.GenerateRandomLoot();
                 }
             }
         }

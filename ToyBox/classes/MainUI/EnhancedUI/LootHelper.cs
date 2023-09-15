@@ -175,9 +175,9 @@ namespace ToyBox {
 
                     Mod.Log($"Add Enchantment {enchantment} ({enchantment.Name})({enchantment.Description}) to item {item}, rarity after {item.Rarity()}, result = {result}");
 
-                    foreach (var ench in item.Enchantments) {
-                        Mod.Log($"    Ent ({ench.Blueprint.Name})({ench.Blueprint.Description}) hide {ench.Blueprint.HiddenInUI}");
-                    }
+                    //foreach (var ench in item.Enchantments) {
+                    //    Mod.Log($"    Ent ({ench.Blueprint.Name})({ench.Blueprint.Description}) hide {ench.Blueprint.HiddenInUI}");
+                    //}
 
                     return;
                 }
@@ -252,6 +252,12 @@ namespace ToyBox {
             return null;
         }
 
+        public static void GenerateRandomLoot( this UnitEntityData unit, bool fUpgrade = false) {
+            new LootWrapper() {
+                Unit = unit,
+            }.GenerateRandomLoot();
+        }
+
         public static void GenerateRandomLoot(this LootWrapper loot, bool fUpgrade = false) {
             const string c_prefix = "[Rnd]";
 
@@ -276,7 +282,7 @@ namespace ToyBox {
             foreach (var lootItem in collection) {
                 var newLoot = lootItem.MoreLikeThis(upgrade: UnityEngine.Random.Range(0, 100) > 80);
 
-                Mod.Log($"Bp = {newLoot?.Name} : {newLoot?.AssetGuid} from {lootItem.Blueprint}");
+                //Mod.Log($"Bp = {newLoot?.Name} : {newLoot?.AssetGuid} from {lootItem.Blueprint}");
 
                 if (newLoot != null)
                     newLoots.Add(newLoot);
@@ -290,8 +296,6 @@ namespace ToyBox {
                     if (pureRandomLoot != null)
                         newLoots.Add(pureRandomLoot);
                 }
-
-                Mod.Log($"PickAny for {loot.GetName()}, count={newLoots.Count}");
             }
 
             foreach (var bpItem in newLoots) {
@@ -303,6 +307,8 @@ namespace ToyBox {
 
                 collection.Add(entity);
             }
+
+            Mod.Log($"Add loot for {loot.InteractionLoot?.Source.name}/{loot.Unit}, count={newLoots.Count}");
         }
 
         public static string NameAndOwner(this ItemEntity u, bool showRating, bool darkmode = false) =>
@@ -352,7 +358,7 @@ namespace ToyBox {
         public static List<LootWrapper> GetMassLootFromCurrentArea() {
             List<LootWrapper> lootWrapperList = new();
             var units = Shodan.AllUnits
-                .Where<UnitEntityData>((Func<UnitEntityData, bool>)(u => u.IsInGame && !u.Descriptor.IsPartyOrPet()));
+                .Where(u => u.IsInGame && !u.Descriptor.IsPartyOrPet());
             //.Where<UnitEntityData>((Func<UnitEntityData, bool>)(u => u.IsRevealed && u.IsDeadAndHasLoot));
             foreach (var unitEntityData in units)
                 lootWrapperList.Add(new LootWrapper() {

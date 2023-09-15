@@ -233,6 +233,7 @@ namespace ToyBox {
         public bool toggleRandomLootForContainer = false;
         public bool toggleResetRandomLootEveryLoading = false;
         public RarityType minLootRarity = RarityType.None;
+        public bool toogleMoreRandomEnemies = false;
 
         public bool toggleColorLootByRarity = false;
         public bool toggleShowRarityTags = false;
