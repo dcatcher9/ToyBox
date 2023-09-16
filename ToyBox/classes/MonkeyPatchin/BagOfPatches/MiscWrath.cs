@@ -106,6 +106,7 @@ namespace ToyBox.BagOfPatches {
 
         [HarmonyPatch(typeof(BlueprintsCache), nameof(BlueprintsCache.Init))]
         internal static class BlueprintsCache_Init_Patch {
+            [HarmonyPriority(Priority.Last)]
             private static void Postfix() {
                 BlueprintLoader.Shared.ForceLoadBlueprints();
                 SpawnHelper.RandomSpawnLogic.Init();

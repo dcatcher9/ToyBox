@@ -239,15 +239,25 @@ namespace ToyBox {
             while (minRarity > RarityType.Trash && !bps.ContainsKey(minRarity))
                 minRarity--;
 
+            if( item.Blueprint is BlueprintItemShield || item.Blueprint is BlueprintItemEquipmentShirt || item.Blueprint is BlueprintItemEquipmentUsable || item.Blueprint is BlueprintItemEquipmentGlasses )
+                minRarity = RarityType.Trash;
+
+            List<BlueprintItem> pool = new();
+
             while (rarity >= minRarity) {
                 Mod.Log($"Rarity = {rarity}");
 
                 if (bps.TryGetValue(rarity, out var list) && list?.Any() == true) {
-                    return list.Random();
+                    pool.AddRange(list);
+                    if (pool.Count > 50)
+                        break;
                 }
 
                 rarity--;
             }
+
+            if (pool.Any())
+                return pool.Random();
 
             return null;
         }
@@ -308,7 +318,7 @@ namespace ToyBox {
                 collection.Add(entity);
             }
 
-            Mod.Log($"Add loot for {loot.InteractionLoot?.Source.name}/{loot.Unit}, count={newLoots.Count}");
+            Mod.Log($"Add loot for {loot.InteractionLoot?.Source.name}/{loot.Unit}, count={newLoots.Count}, first={newLoots.FirstOrDefault()?.Name}");
         }
 
         public static string NameAndOwner(this ItemEntity u, bool showRating, bool darkmode = false) =>

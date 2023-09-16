@@ -25,7 +25,7 @@ namespace ToyBox {
     public class OnAreaLoadComplete : IAreaLoadingStagesHandler {
         public Settings Settings => Main.Settings;
         public void OnAreaLoadingComplete() {
-
+            Mod.Log("OnAreaLoadingComplete");
             ISummonPool pool = Game.Instance.SummonPools.GetPool(SpawnHelper.RandomUnitsPool);
             if (pool != null) {
                 foreach (UnitEntityData unitEntityData in pool.Units) {
