@@ -33,6 +33,7 @@ using Epic.OnlineServices;
 using Kingmaker.Blueprints;
 using Kingmaker.Designers.EventConditionActionSystem.Evaluators;
 using Kingmaker.AreaLogic.SummonPool;
+using Pathfinding.Util;
 #if Wrath
 using Kingmaker.UI.MVVM._PCView.Loot;
 using Kingmaker.UI.MVVM._VM.Loot;
@@ -64,11 +65,20 @@ namespace ToyBox {
         public static BlueprintFaction Player = ResourcesLibrary.TryGetBlueprint<BlueprintFaction>("72f240260881111468db610b6c37c099");
 
         public static BlueprintSummonPool RandomUnitsPool = new BlueprintSummonPool() {
+            name = "RandomUnitsPool",
+            AssetGuid = BlueprintGuid.Parse("7ae2564a12bd2bee3486f26c1f2611c3"),
             Limit = 10000,
             DoNotRemoveDeadUnits = false
         };
 
         public static UnitEntityData SpawnUnit(UnitEntityData unit) {
+
+            SimpleBlueprint simpleBlueprint = ResourcesLibrary.TryGetBlueprint(RandomUnitsPool.AssetGuid);
+            if (simpleBlueprint == null) {
+                ResourcesLibrary.BlueprintsCache.AddCachedBlueprint(RandomUnitsPool.AssetGuid, RandomUnitsPool);
+                RandomUnitsPool.OnEnable();
+            }
+
             ISummonPool pool = Game.Instance.SummonPools.GetPool(SpawnHelper.RandomUnitsPool);
             if (pool == null)
                 return null;
