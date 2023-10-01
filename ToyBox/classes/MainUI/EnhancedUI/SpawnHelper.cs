@@ -34,6 +34,8 @@ using Kingmaker.Blueprints;
 using Kingmaker.Designers.EventConditionActionSystem.Evaluators;
 using Kingmaker.AreaLogic.SummonPool;
 using Pathfinding.Util;
+using static Kingmaker.Designers.EventConditionActionSystem.Actions.TransferSharedVendorTable;
+using System.Xml.Linq;
 #if Wrath
 using Kingmaker.UI.MVVM._PCView.Loot;
 using Kingmaker.UI.MVVM._VM.Loot;
@@ -64,20 +66,36 @@ namespace ToyBox {
         // Token: 0x0400070D RID: 1805
         public static BlueprintFaction Player = ResourcesLibrary.TryGetBlueprint<BlueprintFaction>("72f240260881111468db610b6c37c099");
 
-        public static BlueprintSummonPool RandomUnitsPool = new BlueprintSummonPool() {
-            name = "RandomUnitsPool",
-            AssetGuid = BlueprintGuid.Parse("7ae2564a12bd2bee3486f26c1f2611c3"),
-            Limit = 10000,
-            DoNotRemoveDeadUnits = false
-        };
+        private static BlueprintSummonPool _randPoolCache = null;
+        public static BlueprintSummonPool RandomUnitsPool {
+            get {
+
+                if (_randPoolCache != null)
+                    return _randPoolCache;
+
+                BlueprintSummonPool worldcrawlpool = ResourcesLibrary.TryGetBlueprint<BlueprintSummonPool>("7ae2564a12bd2bfe3486f26c1f2611c1");
+
+                if (worldcrawlpool != null) {
+                    _randPoolCache = worldcrawlpool;
+                    Mod.Log("Use WorldCrawl pool");
+                }
+                else {
+                    _randPoolCache = new BlueprintSummonPool() {
+                        name = "RandomUnitsPool",
+                        AssetGuid = BlueprintGuid.Parse("7ae2564a12bd2bee3486f26c1f2611c3"),
+                        Limit = 1000,
+                        DoNotRemoveDeadUnits = false
+                    };
+                    ResourcesLibrary.BlueprintsCache.AddCachedBlueprint(_randPoolCache.AssetGuid, _randPoolCache);
+                    _randPoolCache.OnEnable();
+                    Mod.Log("Use New Pool");
+                }
+                return _randPoolCache;
+            }
+        }
+
 
         public static UnitEntityData SpawnUnit(UnitEntityData unit) {
-
-            SimpleBlueprint simpleBlueprint = ResourcesLibrary.TryGetBlueprint(RandomUnitsPool.AssetGuid);
-            if (simpleBlueprint == null) {
-                ResourcesLibrary.BlueprintsCache.AddCachedBlueprint(RandomUnitsPool.AssetGuid, RandomUnitsPool);
-                RandomUnitsPool.OnEnable();
-            }
 
             ISummonPool pool = Game.Instance.SummonPools.GetPool(SpawnHelper.RandomUnitsPool);
             if (pool == null)
@@ -85,6 +103,12 @@ namespace ToyBox {
 
             if (pool.Units.Contains(unit))
                 return null;
+
+            if (pool.Count >= 500) {
+                Mod.Log($"Spawn Unit Pool over {pool.Count}");
+
+                return null;
+            }
 
             Vector3 vector = FindRandomPositionNearbyWithSelector(unit.Position, UnityEngine.Random.Range(3, 8), unit);
 

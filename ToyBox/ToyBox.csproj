@@ -167,7 +167,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityModManager_public">
-      <HintPath>..\lib\Wrath\UnityModManager_public.dll</HintPath>
+      <HintPath>$(SolutionDir)\lib\Wrath\UnityModManager_public.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="AstarPathfindingProject">

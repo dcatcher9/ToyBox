@@ -29,6 +29,9 @@ namespace ToyBox {
             ISummonPool pool = Game.Instance.SummonPools.GetPool(SpawnHelper.RandomUnitsPool);
             if (pool != null) {
                 foreach (UnitEntityData unitEntityData in pool.Units) {
+                    if( unitEntityData.IsInGame == false )
+                        continue;
+
                     Mod.Log("Destroying a pre-existing random unit on the random pool. " + unitEntityData.CharacterName);
                     unitEntityData.IsInGame = false;
                     unitEntityData.MarkForDestroy();

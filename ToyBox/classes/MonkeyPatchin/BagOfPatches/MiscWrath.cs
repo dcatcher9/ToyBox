@@ -110,6 +110,20 @@ namespace ToyBox.BagOfPatches {
             private static void Postfix() {
                 BlueprintLoader.Shared.ForceLoadBlueprints();
                 SpawnHelper.RandomSpawnLogic.Init();
+                ThrownDagger();
+            }
+
+            private static void ThrownDagger() {
+                BlueprintWeaponType dagger = ResourcesLibrary.TryGetBlueprint<BlueprintWeaponType>("07cc1a7fceaee5b42b3e43da960fe76d"); // Dagger
+                BlueprintWeaponType dart = ResourcesLibrary.TryGetBlueprint<BlueprintWeaponType>("f415ae950523a7843a74d7780dd551af"); // Dart
+                
+                dagger.m_AttackRange = new Feet(20f);
+                dagger.m_AttackType = AttackType.Ranged;
+                dagger.m_VisualParameters = dart.m_VisualParameters;
+                dagger.m_FighterGroupFlags = WeaponFighterGroupFlags.Thrown | WeaponFighterGroupFlags.Monk | WeaponFighterGroupFlags.BladesLight;
+                dagger.m_AttackBonusStatOverride = Kingmaker.EntitySystem.Stats.StatType.Dexterity;
+                dagger.m_IsMonk = true;
+
             }
         }
 

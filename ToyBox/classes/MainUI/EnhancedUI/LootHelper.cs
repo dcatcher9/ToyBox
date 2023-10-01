@@ -78,7 +78,7 @@ namespace ToyBox {
                 try {
                     desc = item.Description;
                 }
-                catch(Exception ex) {
+                catch (Exception ex) {
                     Mod.Log($"Bad guid = {item.AssetGuid} ex={ex}");
                     continue;
                 }
@@ -99,20 +99,39 @@ namespace ToyBox {
 
             var allEnchants = BlueprintExtensions.GetBlueprints<BlueprintItemEnchantment>();
 
+            Dictionary<string, int> nameCount = new();
+
             foreach (var enchantment in allEnchants) {
                 enchantment.m_HiddenInUI = false;
-                Mod.Log($"Enchantment:{enchantment.name}");
+                Mod.Log($"Enchantment:{enchantment.name} - {enchantment.Name} - {enchantment.Description}");
+
+                if (string.IsNullOrEmpty(enchantment.name))
+                    continue;
+
+                if (nameCount.ContainsKey(enchantment.name))
+                    nameCount[enchantment.name]++;
+                else
+                    nameCount[enchantment.name] = 1;
+
+                string nameKey = enchantment.name + "_name" + nameCount[enchantment.name];
+                string descKey = enchantment.name + "_desc" + nameCount[enchantment.name];
 
                 if (string.IsNullOrEmpty(enchantment.Name)) {
-                    Kingmaker.Localization.LocalizationManager.CurrentPack.PutString(enchantment.name, enchantment.name);
-                    enchantment.m_EnchantName.Key = enchantment.name;
+                    Kingmaker.Localization.LocalizationManager.CurrentPack.PutString(nameKey, enchantment.name);
+                    enchantment.m_EnchantName.Key = nameKey;
 
-                    if( enchantmentToItems.TryGetValue( enchantment.name, out var bp ) ) {
-                        enchantment.m_Description.Key = bp.m_DescriptionText.Key;
+                    if (string.IsNullOrEmpty(enchantment.Description)) {
+                        if (enchantmentToItems.TryGetValue(enchantment.name, out var bp)) {
+                            Kingmaker.Localization.LocalizationManager.CurrentPack.PutString(descKey, bp.m_DescriptionText);
+
+                            enchantment.m_Description.Key = descKey;
+                        }
+                        else {
+                            enchantment.m_Description.Key = nameKey;
+                        }
                     }
-                    else {
-                        enchantment.m_Description.Key = enchantment.name;
-                    }
+
+                    Mod.Log($"[After]Enchantment:{enchantment.name} - {enchantment.Name} - {enchantment.Description}");
                 }
             }
 
@@ -239,7 +258,7 @@ namespace ToyBox {
             while (minRarity > RarityType.Trash && !bps.ContainsKey(minRarity))
                 minRarity--;
 
-            if( item.Blueprint is BlueprintItemShield || item.Blueprint is BlueprintItemEquipmentShirt || item.Blueprint is BlueprintItemEquipmentUsable || item.Blueprint is BlueprintItemEquipmentGlasses )
+            if (item.Blueprint is BlueprintItemShield || item.Blueprint is BlueprintItemEquipmentShirt || item.Blueprint is BlueprintItemEquipmentUsable || item.Blueprint is BlueprintItemEquipmentGlasses)
                 minRarity = RarityType.Trash;
 
             List<BlueprintItem> pool = new();
@@ -262,7 +281,7 @@ namespace ToyBox {
             return null;
         }
 
-        public static void GenerateRandomLoot( this UnitEntityData unit, bool fUpgrade = false) {
+        public static void GenerateRandomLoot(this UnitEntityData unit, bool fUpgrade = false) {
             new LootWrapper() {
                 Unit = unit,
             }.GenerateRandomLoot();
